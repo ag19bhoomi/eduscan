@@ -2,25 +2,25 @@ import sys
 import os
 import io
 
-# --- 1. PATH FIXING (Crucial for Streamlit Cloud) ---
-# This ensures Python looks in the root folder for the 'src' directory
-root_path = os.path.dirname(os.path.abspath(__file__))
-if root_path not in sys.path:
-    sys.path.insert(0, root_path)
+# --- 1. FORCE THE PATH ---
+# We are telling Python exactly where to look for your files
+current_dir = os.path.dirname(os.path.abspath(__file__))
+src_path = os.path.join(current_dir, "src")
+sys.path.append(src_path)
 
 import streamlit as st
 import pandas as pd
 import cv2
 import numpy as np
 
-# --- 2. INTERNAL IMPORTS ---
+# --- 2. DIRECT IMPORTS ---
+# Since we added 'src' to the path above, we import directly from the filenames
 try:
-    from src.preprocess import preprocess_image
-    from src.extract import extract_student_info
-except ImportError:
-    # Fallback for different environment configurations
-    from preprocess import preprocess_image
     from extract import extract_student_info
+    from preprocess import preprocess_image
+except ImportError as e:
+    st.error(f"Critical Import Error: {e}")
+    st.stop()
 
 # --- 3. APP CONFIGURATION ---
 st.set_page_config(
