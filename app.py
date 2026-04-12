@@ -31,12 +31,13 @@ st.set_page_config(
     layout="wide"
 )
 
+# Custom CSS for a professional look
 st.markdown("""
     <style>
     .main { background-color: #f5f7f9; }
     .stButton>button { width: 100%; background-color: #4CAF50; color: white; border-radius: 5px; }
     </style>
-    """, unsafe_allow_stdio=True)
+    """, unsafe_allow_html=True) # Changed from unsafe_allow_stdio to unsafe_allow_html
 
 # --- 4. UI ELEMENTS ---
 st.title("📄 EDUSCAN: Intelligent Marksheet Extraction")
