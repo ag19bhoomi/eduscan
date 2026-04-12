@@ -1,8 +1,7 @@
 import easyocr
 import streamlit as st
-from .preprocess import preprocess_image
-from .nlp_engine import EDUSCAN_NLP
-
+from src.preprocess import preprocess_image  # Changed from .preprocess
+from src.nlp_engine import EDUSCAN_NLP       # Changed from .nlp_engine
 # Move the reader into a cached function to prevent startup hangs
 @st.cache_resource
 def get_ocr_reader():
