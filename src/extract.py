@@ -1,28 +1,29 @@
 import easyocr
-import os
-from .nlp_engine import EDUSCAN_NLP # Import your new intelligence layer
+import streamlit as st
+from .preprocess import preprocess_image
+from .nlp_engine import EDUSCAN_NLP
 
-# Initialize EasyOCR
-reader = easyocr.Reader(['en', 'hi'], gpu=False)
-
-# Initialize your NLP engine
-nlp_processor = EDUSCAN_NLP()
+# Move the reader into a cached function to prevent startup hangs
+@st.cache_resource
+def get_ocr_reader():
+    # This will now download the models ONLY when needed
+    return easyocr.Reader(['en'], gpu=False)
 
 def extract_student_info(image_path):
-    ocr_results = reader.readtext(image_path)
+    # Initialize the brain
+    nlp_processor = EDUSCAN_NLP()
     
-    # IMPORTANT: Only extract the string (the second item in the tuple)
-    raw_text_list = [res[1] for res in ocr_results]
+    # Get the reader (it will download models here if not present)
+    with st.spinner("Downloading/Loading OCR Models... Please wait."):
+        reader = get_ocr_reader()
     
-    # Pass just the strings to the NLP engine
-    return nlp_processor.classify_text(raw_text_list)
-
-if __name__ == "__main__":
-    test_path = 'data/processed/cleaned_marksheet.jpg'
-    print("--- EDUSCAN Hybrid Extraction (OCR + NLP) ---")
+    # 1. Preprocess
+    processed_img = preprocess_image(image_path)
     
-    data = extract_student_info(test_path)
+    # 2. Extract Text
+    result = reader.readtext(processed_img, detail=0)
     
-    print(f"Result from NLP Engine:")
-    print(f"Name: {data['NAME']}")
-    print(f"Roll: {data['ROLL_NO']}")
+    # 3. NLP Intelligence
+    structured_data = nlp_processor.classify_text(result)
+    
+    return structured_data
