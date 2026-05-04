@@ -3,41 +3,45 @@ import re
 
 class EDUSCAN_NLP:
     def __init__(self):
-        # Database of valid candidates
+        # Database of valid candidates for fuzzy matching
         self.known_names = ["BHOOMI AGARWAL", "HIMANSHI MAHAVAR", "VISHVMOHAN PARASHAR", "LAKSHY AGGARWAL", "PRAJJVAL RAWAT"]
         # Words to ignore when searching for a name
-        self.banned = {"MOTHER", "FATHER", "GUARDIAN", "SCHOOL", "BOARD", "EXAMINATION", "SECONDARY", "PRIVATE"}
+        self.banned_words = {"MOTHER", "FATHER", "ROLL", "DATE", "SCHOOL", "BOARD", "EXAMINATION", "SECONDARY", "MARKS", "STATEMENT", "CERTIFICATE"}
+
+    def fuzzy_correction(self, name):
+        """Finds the closest match from known_names to correct OCR typos."""
+        matches = difflib.get_close_matches(name, self.known_names, n=1, cutoff=0.5)
+        return matches[0] if matches else name
+
     def classify_text(self, text_list):
         results = {"NAME": "Not Found", "ROLL_NO": "Not Found"}
         
-        # Words we know are NOT names
-        banned_words = {"MOTHER", "FATHER", "ROLL", "DATE", "SCHOOL", "BOARD", "EXAMINATION", "SECONDARY", "MARKS", "STATEMENT", "CERTIFICATE"}
-        
+        # Clean lines and remove small noise
         clean_list = [t.strip() for t in text_list if len(t.strip()) > 3]
 
-        # --- 1. IMPROVED NAME DETECTION ---
+        # --- 1. NAME DETECTION (Brute Force) ---
         for text in clean_list:
             upper_text = text.upper()
             words = upper_text.split()
             
-            # A candidate name is usually 2 or 3 words long
+            # A candidate name is usually 2 to 4 words long
             if 2 <= len(words) <= 4:
-                # If the line contains a banned word, skip it
-                if any(b in upper_text for b in banned_words):
+                # If the line contains a banned word (like 'BOARD'), skip it
+                if any(b in upper_text for b in self.banned_words):
                     continue
                 
-                # If the line is all letters (no numbers), it's likely a name
+                # If the line is only letters/spaces, it's likely the student name
                 if re.match(r'^[A-Z\s]+$', upper_text):
                     results["NAME"] = self.fuzzy_correction(upper_text)
-                    break # Stop at the first valid name found
+                    break 
 
         # --- 2. ROLL NUMBER DETECTION ---
         for text in clean_list:
-            # Look for 7 or 8 digits
+            # Look for 7 or 8 consecutive digits
             roll_match = re.search(r'\b\d{7,8}\b', text)
             if roll_match:
                 val = roll_match.group()
-                # Exclude obvious dates or serial numbers
+                # Filter out obvious dates or serial numbers (027...)
                 if not val.startswith("027") and not val.endswith(("2005", "2021")):
                     results["ROLL_NO"] = val
                     break
