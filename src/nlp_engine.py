@@ -2,56 +2,90 @@ import spacy
 import difflib
 import re
 
-nlp = spacy.load("en_core_web_sm")
+# Load SpaCy model
+try:
+    nlp = spacy.load("en_core_web_sm")
+except:
+    # Fallback if model isn't loaded
+    pass
 
 class EDUSCAN_NLP:
     def __init__(self):
+        # Your existing lists
         self.known_names = ["BHOOMI AGARWAL", "HIMANSHI MAHAVAR", "VISHVMOHAN PARASHAR", "LAKSHY AGGARWAL", "PRAJJVAL RAWAT"]
         self.banned = {"certify", "that", "this", "is", "to", "board", "secondary", "examination", "school", "roll", "no"}
+        
+        # New flexible keywords
+        self.name_keywords = ['name', 'student', 'candidate', 'examinee', 'name of student']
+        self.roll_keywords = ['roll', 'enrollment', 'seat no', 'reg', 'index', 'roll no']
 
     def classify_text(self, text_list):
         results = {"NAME": "Not Found", "ROLL_NO": "Not Found"}
+        
+        # Clean the list for line-by-line heuristic processing
         clean_list = [t.strip() for t in text_list if len(t.strip()) > 3]
+        # Create a lowercase full string for global pattern searching
+        full_text = " ".join(text_list).lower()
 
-        for i, text in enumerate(clean_list):
-            upper_text = text.upper()
+        # --- 1. GLOBAL KEYWORD SEARCH (New Flexible Logic) ---
+        # Search for Name
+        for kw in self.name_keywords:
+            if kw in full_text:
+                pattern = f"{kw}\s*[:\-]?\s*([a-zA-Z\s]{{3,30}})"
+                match = re.search(pattern, full_text, re.IGNORECASE)
+                if match:
+                    results["NAME"] = match.group(1).strip().upper()
+                    break
 
-            # --- NAME LOGIC ---
-            if "CERTIFY" in upper_text or "THAT" in upper_text:
-                for offset in range(1, 4):
-                    if i + offset < len(clean_list):
-                        candidate = clean_list[i + offset]
-                        words = set(candidate.lower().split())
-                        if not (words & self.banned) and len(candidate.split()) >= 2:
-                            results["NAME"] = self.fuzzy_correction(candidate.upper())
-                            break
+        # Search for Roll No
+        for kw in self.roll_keywords:
+            if kw in full_text:
+                pattern = f"{kw}\s*[:\-]?\s*(\d{{4,20}})"
+                match = re.search(pattern, full_text, re.IGNORECASE)
+                if match:
+                    results["ROLL_NO"] = match.group(1).strip()
+                    break
 
-            # --- ROBUST ROLL NUMBER LOGIC ---
-            # Step 1: Extract all digits from current block
+        # --- 2. HEURISTIC ANCHOR SEARCH (Your Original Logic) ---
+        # If the global search didn't find a high-quality name, try the "CERTIFY" anchor
+        if results["NAME"] == "Not Found" or len(results["NAME"].split()) < 2:
+            for i, text in enumerate(clean_list):
+                upper_text = text.upper()
+                if "CERTIFY" in upper_text or "THAT" in upper_text:
+                    for offset in range(1, 4):
+                        if i + offset < len(clean_list):
+                            candidate = clean_list[i + offset]
+                            words = set(candidate.lower().split())
+                            if not (words & self.banned) and len(candidate.split()) >= 2:
+                                results["NAME"] = candidate.upper()
+                                break
+
+        # --- 3. ROBUST ROLL NUMBER REFINEMENT ---
+        # Apply your ghost character fix and exclusions to the Roll No
+        for text in clean_list:
             digits_only = re.sub(r'\D', '', text)
             
-            # Step 2: Ghost character fix (trim 9 digits starting with 1 to 8 digits)
+            # Ghost character fix
             if len(digits_only) == 9 and digits_only.startswith('1'):
                 digits_only = digits_only[1:]
 
-            # Step 3: Check if it's a valid 8-digit number
             if len(digits_only) == 8:
-                # Filter out the Serial Number (starts with 027)
-                if digits_only.startswith("027"):
-                    continue
+                # Exclusions
+                if digits_only.startswith("027"): continue # Serial No
+                if digits_only.endswith(("2004", "2005", "2006", "2007")): continue # DOB
                 
-                # Filter out Date of Birth (ends with 2005, 2006, etc.)
-                if digits_only.endswith(("2004", "2005", "2006", "2007")):
-                    continue
+                # High confidence if 'ROLL' is in the line
+                if "ROLL" in text.upper() or "NO" in text.upper():
+                    results["ROLL_NO"] = digits_only
+                    break
+                # Fallback if nothing found yet
+                elif results["ROLL_NO"] == "Not Found":
+                    results["ROLL_NO"] = digits_only
 
-                # If we already found a Roll No near the word "ROLL", don't overwrite it
-                # Otherwise, this acts as our 'Global Search' fallback
-                if results["ROLL_NO"] == "Not Found":
-                    results["ROLL_NO"] = digits_only
-                
-                # If the word 'ROLL' is actually in the text, this is a high-confidence match
-                if "ROLL" in upper_text or "NO" in upper_text:
-                    results["ROLL_NO"] = digits_only
+        # --- 4. FUZZY CORRECTION ---
+        # Final pass to clean up OCR errors in the name
+        if results["NAME"] != "Not Found":
+            results["NAME"] = self.fuzzy_correction(results["NAME"])
 
         return results
 
