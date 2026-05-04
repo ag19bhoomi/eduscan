@@ -9,8 +9,8 @@ class EDUSCAN_NLP:
         self.banned_words = {"MOTHER", "FATHER", "ROLL", "DATE", "SCHOOL", "BOARD", "EXAMINATION", "SECONDARY", "MARKS", "STATEMENT", "CERTIFICATE"}
 
     def fuzzy_correction(self, name):
-        """Finds the closest match from known_names to correct OCR typos."""
-        matches = difflib.get_close_matches(name, self.known_names, n=1, cutoff=0.5)
+        """Lowered cutoff to 0.3 to catch heavily garbled OCR results."""
+        matches = difflib.get_close_matches(name, self.known_names, n=1, cutoff=0.3)
         return matches[0] if matches else name
 
     def classify_text(self, text_list):
