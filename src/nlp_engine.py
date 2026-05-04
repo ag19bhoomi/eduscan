@@ -14,6 +14,8 @@ class EDUSCAN_NLP:
         return matches[0] if matches else name
 
     def classify_text(self, text_list):
+        safe_list = text_list[8:] if len(text_list) > 10 else text_list
+        # ... rest of your brute force logic ...
         results = {"NAME": "Not Found", "ROLL_NO": "Not Found"}
         
         # Clean lines and remove small noise
