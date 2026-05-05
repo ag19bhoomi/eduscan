@@ -8,7 +8,7 @@ EDUSCAN is an automated data extraction system designed to process academic mark
 ##  Key Features
 - **Batch Processing:** Upload multiple marksheets simultaneously.
 - **Advanced Preprocessing:** Uses OpenCV for noise reduction and contrast enhancement to improve OCR accuracy.
-- **Intelligent Extraction:** Employs **EasyOCR** and custom **NLP Heuristics** to distinguish between names, roll numbers, and "noise" (like dates or serial numbers).
+- **Intelligent Extraction:** Employs **Tesseract** and custom **NLP Heuristics** to distinguish between names, roll numbers, and "noise" (like dates or serial numbers).
 - **Fuzzy Matching:** Utilizes `difflib` to correct OCR misspellings against a known database of student names.
 - **Excel Export:** Generates a professional, downloadable report in `.xlsx` format.
 
