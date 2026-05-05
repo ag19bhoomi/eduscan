@@ -3,7 +3,7 @@
 EDUSCAN is an automated data extraction system designed to process academic marksheets using **Computer Vision**, **OCR**, and **Natural Language Processing (NLP)**. It eliminates manual data entry by converting scanned images into structured Excel reports with high precision.
 
 ##  Live Demo
-[Check out the Live App on Streamlit Cloud](https://share.streamlit.io/) *(Replace this with your actual URL once deployed)*
+[Check out the Live App on Streamlit Cloud](https://eduscan-ma3fickjbgpvrhh5uw87vl.streamlit.app/)
 
 ##  Key Features
 - **Batch Processing:** Upload multiple marksheets simultaneously.
@@ -13,7 +13,7 @@ EDUSCAN is an automated data extraction system designed to process academic mark
 - **Excel Export:** Generates a professional, downloadable report in `.xlsx` format.
 
 ## Tech Stack
-- **Frontend:** [Streamlit](https://streamlit.io/)
+- **Frontend:** [Streamlit](https://eduscan-ma3fickjbgpvrhh5uw87vl.streamlit.app/)
 - **Image Processing:** [OpenCV](https://opencv.org/)
 - **OCR Engine:** [EasyOCR](https://github.com/JaidedAI/EasyOCR)
 - **NLP Layer:** [SpaCy](https://spacy.io/) & Regex
